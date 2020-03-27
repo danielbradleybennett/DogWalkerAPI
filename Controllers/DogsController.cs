@@ -84,7 +84,7 @@ namespace DogWalkerAPI.Controllers
 
                     if (reader.Read())
                     {
-                        Dog dog = new Dog
+                         dog = new Dog
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
@@ -119,7 +119,7 @@ namespace DogWalkerAPI.Controllers
 
 
                     int newId = (int)cmd.ExecuteScalar();
-                    department.Id = newId;
+                    dog.Id = newId;
                     return CreatedAtRoute("GetDog", new { id = newId }, dog);
                 }
             }
@@ -137,18 +137,15 @@ namespace DogWalkerAPI.Controllers
                     {
                         cmd.CommandText = @"UPDATE Dog
                                             SET Name = @Name,
-                                                OwnerId = @Id,
+                                                OwnerId = @OwnerId,
                                                 Breed = @Breed,
                                                 Notes = @Notes
 
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@Name", dog.Name));
-                        cmd.Parameters.Add(new SqlParameter("@Id", dog.OwnerId));
-                        cmd.Parameters.Add(new SqlParameter("@Name", dog.Name));
+                        cmd.Parameters.Add(new SqlParameter("@OwnerId", dog.OwnerId));
+                        cmd.Parameters.Add(new SqlParameter("@Breed", dog.Breed));
                         cmd.Parameters.Add(new SqlParameter("@Notes", dog.Notes));
-
-
-
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();

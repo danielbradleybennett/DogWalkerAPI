@@ -5,14 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\DogsController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Controllers\DogsController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.1" />
   </ItemGroup>
 
