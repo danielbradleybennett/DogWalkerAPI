@@ -20,6 +20,8 @@ namespace DogWalkerAPI.Models
 
         public Neighborhood Neighborhood { get; set; }
 
+        public List<Dog> Dogs { get; set; }
+
 
 
     }

@@ -31,6 +31,8 @@ namespace DogWalkerAPI.Controllers
             }
         }
 
+        public int OwnerId { get; private set; }
+
         [HttpGet]
         public async Task<IActionResult> Get()
         {
@@ -39,9 +41,14 @@ namespace DogWalkerAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Id, Name, OwnerId, Breed, Notes FROM Dog";
+                    cmd.CommandText = @"SELECT d.Id, d.Name, d.Breed, d.OwnerId, o.Name AS OwnerName, o.NeighborhoodId, o.Address, o.Phone, d.Notes FROM Dog d
+                                        LEFT JOIN Owner o ON d.OwnerId = o.Id";
+
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Dog> dogs = new List<Dog>();
+
+
+        
 
                     while (reader.Read())
                     {
@@ -51,7 +58,15 @@ namespace DogWalkerAPI.Controllers
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
                             Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                            Notes = reader.GetString(reader.GetOrdinal("Notes"))
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            Owner = new Owner
+                             {
+                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                 Name = reader.GetString(reader.GetOrdinal("Name")),
+                                 Address = reader.GetString(reader.GetOrdinal("Address")),
+                                 NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                 Phone = reader.GetString(reader.GetOrdinal("Phone"))
+                             }
 
                         };
 
@@ -72,11 +87,9 @@ namespace DogWalkerAPI.Controllers
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = @"
-                        SELECT
-                            Id, Name, OwnerId, Breed, Notes
-                        FROM Dog
-                        WHERE Id = @id";
+                    cmd.CommandText = @"SELECT d.Id, d.Name, d.Breed, d.OwnerId, o.Name AS Name, o.NeighborhoodId, o.Address, o.Phone, d.Notes FROM Dog d
+                                        LEFT JOIN Owner o ON d.OwnerId = o.Id
+                                        WHERE d.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -84,15 +97,23 @@ namespace DogWalkerAPI.Controllers
 
                     if (reader.Read())
                     {
-                        Dog dog = new Dog
+                         dog = new Dog
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
                             Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                            Notes = reader.GetString(reader.GetOrdinal("Notes"))
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            Owner = new Owner
+                             {
+                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                 Name = reader.GetString(reader.GetOrdinal("Name")),
+                                 Address = reader.GetString(reader.GetOrdinal("Address")),
+                                 NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                 Phone = reader.GetString(reader.GetOrdinal("Phone"))
+                             }
 
-                        };
+                         };
                     }
                     reader.Close();
 
@@ -119,7 +140,7 @@ namespace DogWalkerAPI.Controllers
 
 
                     int newId = (int)cmd.ExecuteScalar();
-                    department.Id = newId;
+                    dog.Id = newId;
                     return CreatedAtRoute("GetDog", new { id = newId }, dog);
                 }
             }
@@ -137,18 +158,15 @@ namespace DogWalkerAPI.Controllers
                     {
                         cmd.CommandText = @"UPDATE Dog
                                             SET Name = @Name,
-                                                OwnerId = @Id,
+                                                OwnerId = @OwnerId,
                                                 Breed = @Breed,
                                                 Notes = @Notes
 
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@Name", dog.Name));
-                        cmd.Parameters.Add(new SqlParameter("@Id", dog.OwnerId));
-                        cmd.Parameters.Add(new SqlParameter("@Name", dog.Name));
+                        cmd.Parameters.Add(new SqlParameter("@OwnerId", dog.OwnerId));
+                        cmd.Parameters.Add(new SqlParameter("@Breed", dog.Breed));
                         cmd.Parameters.Add(new SqlParameter("@Notes", dog.Notes));
-
-
-
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         int rowsAffected = cmd.ExecuteNonQuery();
