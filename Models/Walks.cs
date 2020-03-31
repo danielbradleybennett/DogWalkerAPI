@@ -10,8 +10,6 @@ namespace DogWalkerAPI.Models
     {
         public int Id { get; set; }
 
-        public string Name { get; set; }
-
         public DateTime Date { get; set; }
         
         public int Duration { get; set; }
@@ -23,9 +21,6 @@ namespace DogWalkerAPI.Models
         public int WalkerId { get; set; }
 
         public Walker Walker { get; set; }
-
-
-
 
 
     }

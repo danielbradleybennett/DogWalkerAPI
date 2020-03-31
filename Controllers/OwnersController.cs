@@ -65,7 +65,9 @@ namespace DogWalkerAPI.Controllers
         }
 
         [HttpGet("{id}", Name = "GetOwner")]
-        public async Task<IActionResult> Get([FromRoute] int id)
+        public async Task<IActionResult> Get(
+            [FromRoute] int id,
+            [FromQuery] string include)
         {
             using (SqlConnection conn = Connection)
             {
@@ -73,17 +75,65 @@ namespace DogWalkerAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Phone, d.id AS DogId, d.Name AS DogName, d.Breed, d.OwnerId
-                        FROM Owner o
-                        LEFT JOIN Dog d ON o.Id = d.OwnerId
-                        WHERE o.Id = @id";
+                        SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Phone, d.id AS DogId, d.Name AS DogName, d.Breed, d.OwnerId "; 
+                        
+                        if(include == "neighborhood")
+                        {
+                            cmd.CommandText += "n.Id, n.Name AS NeighborhoodName ";
+                        }
+
+                    cmd.CommandText += "FROM Owner o LEFT JOIN Dog d ON o.Id = d.OwnerId ";
+                        if(include == "neighborhood")
+                    {
+                        cmd.CommandText += "LEFT JOIN Neighborhood n ON o.NeighborhoodId = n.Id ";
+                    }
+                        
+                    cmd.CommandText += "WHERE o.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
+                   
 
                     Owner owner = null;
 
-                    if (reader.Read())
+
+
+                    if (include == "neighborhood")
                     {
+                        while (reader.Read())
+                        {
+                            if (owner == null)
+                            {
+                                owner = new Owner
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    Name = reader.GetString(reader.GetOrdinal("Name")),
+                                    Address = reader.GetString(reader.GetOrdinal("Address")),
+                                    Phone = reader.GetString(reader.GetOrdinal("Phone")),
+                                    NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                    Neighborhood = new Neighborhood()
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                        Name = reader.GetString(reader.GetOrdinal("NeighborhoodName"))
+                                    },
+                                    Dogs = new List<Dog>()
+
+                                };
+                            }
+                            owner.Dogs.Add(new Dog()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("DogId")),
+                                Name = reader.GetString(reader.GetOrdinal("DogName")),
+                                Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                                OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId"))
+                            });
+                        }
+                    }
+                    else
+                    {
+                        while(reader.Read())
+                        { 
+                            if(owner == null)
+                            { 
                         owner = new Owner
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
@@ -93,17 +143,20 @@ namespace DogWalkerAPI.Controllers
                             NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
                             Dogs = new List<Dog>()
                         };
+
+
                     }
 
-                    owner.Dogs.Add(new Dog()
-                    {
-                        Id = reader.GetInt32(reader.GetOrdinal("DogId")),
-                        Name = reader.GetString(reader.GetOrdinal("DogName")),
-                        Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                        OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId"))
-                    });
-                
-                reader.Close();
+                            owner.Dogs.Add(new Dog()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("DogId")),
+                                Name = reader.GetString(reader.GetOrdinal("DogName")),
+                                Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                                OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId"))
+                            });
+                        }
+                    }
+                    reader.Close();
 
                     return Ok(owner);
                 }
